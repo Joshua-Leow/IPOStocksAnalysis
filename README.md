@@ -27,7 +27,7 @@ This program analyzes the performance of Initial Public Offering (IPO) stocks ov
 
 The program creates a boxplot with the following characteristics:
 - X-axis: Trading days (D1 to DX)
-- Y-axis: Percentage change (limited to -20% to 40% for better visibility)
+- Y-axis: Percentage change (modify limit for better visibility, default set to -20% to 40%)
 - A red dashed line at 0% for reference
 - Customizable figure size
 
@@ -46,7 +46,7 @@ The program creates a boxplot with the following characteristics:
 
 ## Requirements
 
-- Python 3.x
+- Python 3.10.11
 - Libraries: selenium, beautifulsoup4, pandas, yfinance, matplotlib
 - Chrome WebDriver (for Selenium)
 
