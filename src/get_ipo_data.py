@@ -3,33 +3,8 @@ import pandas as pd
 from pathlib import Path
 import json
 
-# TODO: get symbols from "https://www.nasdaq.com/market-activity/ipos"
-symbols = [
-    "DIDI", "AVTE", "SHQAU", "CPOP", "THCPU", "MCAFU", "DNAA", "DNAB",
-    "MQ", "GACQU", "CLBRU", "ISAA", "SPKAU", "ZME", "DLO"
-]
-
-# TODO: get year and month_num from "https://www.nasdaq.com/market-activity/ipos"
-year = 2021
-month_num = 8
-
-selected_attributes = [
-    'trailingPE', 'forwardPE', 'priceToSalesTrailing12Months', 'priceToBook',
-    'returnOnAssets', 'returnOnEquity', 'profitMargins', 'operatingMargins',
-    'grossMargins', 'earningsQuarterlyGrowth', 'revenueGrowth',
-    'marketCap', 'enterpriseValue', 'enterpriseToRevenue', 'enterpriseToEbitda',
-    'previousClose', 'open', 'dayLow', 'dayHigh', 'fiftyTwoWeekLow',
-    'fiftyTwoWeekHigh', 'fiftyDayAverage', 'twoHundredDayAverage', 'beta', '52WeekChange',
-    'volume', 'averageVolume', 'averageVolume10days',
-    'targetHighPrice', 'targetLowPrice', 'targetMeanPrice',
-    'targetMedianPrice', 'recommendationMean', 'numberOfAnalystOpinions',
-    'totalCash', 'totalDebt', 'quickRatio', 'currentRatio',
-    'debtToEquity', 'freeCashflow', 'operatingCashflow',
-    'totalRevenue', 'ebitda', 'netIncomeToCommon',
-    'auditRisk', 'boardRisk', 'compensationRisk', 'shareHolderRightsRisk', 'overallRisk',
-    'heldPercentInsiders', 'heldPercentInstitutions', 'sharesPercentSharesOut',
-    'shortRatio', 'shortPercentOfFloat'
-]
+from config import *
+from scraper.scrape_nasdaq_ipo import get_symbols_list
 
 
 # Function to save stock info as JSON
@@ -100,4 +75,5 @@ def process_symbols(symbols):
 
 # Run the script
 if __name__ == "__main__":
+    symbols = get_symbols_list(NASDAQ_IPO_URL, CHROME_DRIVER_PATH)
     process_symbols(symbols)

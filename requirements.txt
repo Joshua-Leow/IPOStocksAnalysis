@@ -9,3 +9,4 @@ yfinance
 pathlib
 dataclasses
 scipy
+selenium
