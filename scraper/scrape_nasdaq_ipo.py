@@ -95,12 +95,15 @@ def get_symbols_list_from_month_year(base_url: str, driver_path: str) -> List[st
         calendar_icon_shadowhost = driver.find_element(By.CSS_SELECTOR, CALENDAR_ICON_SHADOWHOST)
         calendar_icon_shadow_root = driver.execute_script("return arguments[0].shadowRoot", calendar_icon_shadowhost)
         calendar_icon_usage = calendar_icon_shadow_root.find_element(By.CSS_SELECTOR, CALENDAR_USAGE)
-        driver.execute_script("arguments[0].click();", calendar_icon_usage)
-        time.sleep(1)
+        # driver.execute_script("arguments[0].click();", calendar_icon_usage)
+        driver.execute_script("arguments[0].dispatchEvent(new MouseEvent('click', {bubbles: true, cancelable: true}));",
+                              calendar_icon_usage)
+        time.sleep(10)
 
             # move to desired month and year
         current_month_year = driver.find_element(By.CSS_SELECTOR, CALENDAR_BELT_TEXT).text
-        num_of_months, months_left_right, num_of_years, years_left_right = calculate_date_differences(current_month_year, DESIRED_MONTH, DESIRED_YEAR)
+        num_of_months, months_left_right, num_of_years, years_left_right \
+                                            = calculate_date_differences(current_month_year, DESIRED_MONTH, DESIRED_YEAR)
         if months_left_right == 'left':
             for i in range(num_of_months):
                 driver.find_element(By.CSS_SELECTOR, CALENDAR_BELT_MONTH_LEFT).click()
@@ -109,10 +112,10 @@ def get_symbols_list_from_month_year(base_url: str, driver_path: str) -> List[st
                 driver.find_element(By.CSS_SELECTOR, CALENDAR_BELT_MONTH_RIGHT).click()
 
         if years_left_right == 'left':
-            for i in range(num_of_months):
+            for i in range(num_of_years):
                 driver.find_element(By.CSS_SELECTOR, CALENDAR_BELT_YEAR_LEFT).click()
         elif years_left_right == 'right':
-            for i in range(num_of_months):
+            for i in range(num_of_years):
                 driver.find_element(By.CSS_SELECTOR, CALENDAR_BELT_YEAR_RIGHT).click()
         time.sleep(2)
 
