@@ -14,7 +14,7 @@ HEADERS = {
 
 # TODO: get year and month_num from "https://www.nasdaq.com/market-activity/ipos"
 DESIRED_YEAR = 2021
-DESIRED_MONTH = 8
+DESIRED_MONTH = 9
 
 selected_attributes = [
     'trailingPE', 'forwardPE', 'priceToSalesTrailing12Months', 'priceToBook',
