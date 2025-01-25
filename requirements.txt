@@ -11,3 +11,4 @@ dataclasses
 scipy
 selenium
 mplfinance
+finplot
