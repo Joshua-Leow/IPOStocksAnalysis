@@ -98,6 +98,23 @@ def get_symbols_list_from_month_year(base_url: str, driver_path: str) -> List[st
         driver.execute_script("arguments[0].click();", calendar_icon_usage)
         time.sleep(1)
 
+            # move to desired month and year
+        current_month_year = driver.find_element(By.CSS_SELECTOR, CALENDAR_BELT_TEXT).text
+        num_of_months, months_left_right, num_of_years, years_left_right = calculate_date_differences(current_month_year, DESIRED_MONTH, DESIRED_YEAR)
+        if months_left_right == 'left':
+            for i in range(num_of_months):
+                driver.find_element(By.CSS_SELECTOR, CALENDAR_BELT_MONTH_LEFT).click()
+        elif months_left_right == 'right':
+            for i in range(num_of_months):
+                driver.find_element(By.CSS_SELECTOR, CALENDAR_BELT_MONTH_RIGHT).click()
+
+        if years_left_right == 'left':
+            for i in range(num_of_months):
+                driver.find_element(By.CSS_SELECTOR, CALENDAR_BELT_YEAR_LEFT).click()
+        elif years_left_right == 'right':
+            for i in range(num_of_months):
+                driver.find_element(By.CSS_SELECTOR, CALENDAR_BELT_YEAR_RIGHT).click()
+        time.sleep(2)
 
             # get symbols from table content
         # upcoming_symbols = get_symbols_from_shadowhost(UPCOMING_SHADOWHOST, driver)
