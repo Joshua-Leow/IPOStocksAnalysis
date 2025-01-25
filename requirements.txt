@@ -10,3 +10,4 @@ pathlib
 dataclasses
 scipy
 selenium
+mplfinance
