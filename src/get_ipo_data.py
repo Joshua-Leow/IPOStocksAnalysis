@@ -5,8 +5,8 @@ import pandas as pd
 from pathlib import Path
 import json
 
-from config import *
-from scraper.scrape_nasdaq_ipo import get_symbols_list
+from src.config import *
+from src.scraper.scrape_nasdaq_ipo import get_symbols_list
 
 
 # Function to save stock info as JSON

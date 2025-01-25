@@ -1,15 +1,13 @@
 import time
 from typing import List
-from datetime import datetime
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.service import Service
 
-from config import *
-from scraper.pages import *
+from src.config import *
+from src.scraper.pages import *
 
 def get_month_num(month_str:str) -> int:
     """
