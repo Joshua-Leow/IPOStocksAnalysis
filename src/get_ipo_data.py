@@ -10,7 +10,7 @@ from scraper.scrape_nasdaq_ipo import get_symbols_list
 # Function to save stock info as JSON
 def save_info_as_json(symbol, info):
     try:
-        info_path = Path(f"../data/ipo-dataset/{year}/{month_num}/{symbol}-info.json")
+        info_path = Path(f"../data/ipo-dataset/{DESIRED_YEAR}/{DESIRED_MONTH}/{symbol}-info.json")
         info_path.parent.mkdir(parents=True, exist_ok=True)
 
         with open(info_path, 'w') as json_file:
@@ -31,7 +31,7 @@ def save_stock_data_to_csv(symbol, data):
         data.reset_index(inplace=True)
         data['Date'] = pd.to_datetime(data['Date'], errors='coerce').dt.strftime('%d%m%Y')
 
-        csv_path = Path(f"../data/ipo-dataset/{year}/{month_num}/{symbol}.csv")
+        csv_path = Path(f"../data/ipo-dataset/{DESIRED_YEAR}/{DESIRED_MONTH}/{symbol}.csv")
         csv_path.parent.mkdir(parents=True, exist_ok=True)
         data.to_csv(csv_path, header=True, index=False)
 
