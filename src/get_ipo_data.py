@@ -1,4 +1,5 @@
 import os
+from typing import List
 
 import yfinance as yf
 import pandas as pd
@@ -13,7 +14,7 @@ from src.scraper.scrape_nasdaq_ipo import get_symbols_list
 def save_info_as_json(symbol, info):
     try:
         # Construct absolute path
-        info_path = Path(os.path.join(os.getcwd(), "data/ipo-dataset", str(DESIRED_YEAR), str(DESIRED_MONTH), f"{symbol}-info.json"))
+        info_path = Path(os.path.join(os.getcwd(), f"data/ipo-dataset/{DESIRED_YEAR}/{DESIRED_MONTH}/{symbol}-info.json"))
         info_path.parent.mkdir(parents=True, exist_ok=True)
 
         with open(info_path, 'w') as json_file:
@@ -35,7 +36,7 @@ def save_stock_data_to_csv(symbol, data):
         data['Date'] = pd.to_datetime(data['Date'], errors='coerce').dt.strftime('%d%m%Y')
 
         # Construct absolute path
-        csv_path = Path(os.path.join(os.getcwd(), "data/ipo-dataset", str(DESIRED_YEAR), str(DESIRED_MONTH), f"{symbol}.csv"))
+        csv_path = Path(os.path.join(os.getcwd(), f"data/ipo-dataset/{DESIRED_YEAR}/{DESIRED_MONTH}/{symbol}-info.json"))
         csv_path.parent.mkdir(parents=True, exist_ok=True)
         data.to_csv(csv_path, header=True, index=False)
 
@@ -66,7 +67,7 @@ def fetch_stock_history(symbol:str):
 
 
 # Main function to process all symbols
-def process_symbols(symbols:str):
+def process_symbols(symbols:List[str]):
     for symbol in symbols:
         filtered_info = fetch_filtered_stock_info(symbol)
         if filtered_info:
