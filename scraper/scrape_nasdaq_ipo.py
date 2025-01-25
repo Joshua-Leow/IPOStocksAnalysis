@@ -93,12 +93,11 @@ def get_symbols_list_from_month_year(base_url: str, driver_path: str) -> List[st
 
             # opens calendar selection box
         calendar_icon_shadowhost = driver.find_element(By.CSS_SELECTOR, CALENDAR_ICON_SHADOWHOST)
+        driver.execute_script("arguments[0].scrollIntoView();", calendar_icon_shadowhost)
+        WebDriverWait(driver, 20).until(lambda x: x.find_element(By.CSS_SELECTOR, CALENDAR_ICON_SHADOWHOST))
         calendar_icon_shadow_root = driver.execute_script("return arguments[0].shadowRoot", calendar_icon_shadowhost)
-        calendar_icon_usage = calendar_icon_shadow_root.find_element(By.CSS_SELECTOR, CALENDAR_USAGE)
-        # driver.execute_script("arguments[0].click();", calendar_icon_usage)
-        driver.execute_script("arguments[0].dispatchEvent(new MouseEvent('click', {bubbles: true, cancelable: true}));",
-                              calendar_icon_usage)
-        time.sleep(10)
+        calendar_icon_shadow_root.find_element(By.CSS_SELECTOR, CALENDAR_USAGE).click()
+        time.sleep(2)
 
             # move to desired month and year
         current_month_year = driver.find_element(By.CSS_SELECTOR, CALENDAR_BELT_TEXT).text

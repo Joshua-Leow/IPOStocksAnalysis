@@ -4,7 +4,7 @@ FILINGS_SHADOWHOST = "div.jupiter22-ipo-calendar__filings_table.ma-ipo-calendar-
 UPCOMING_SYMBOLS = "div > div > div.table-row > div:nth-child(1) > a"
 
 CALENDAR_ICON_SHADOWHOST = "div.jupiter22-date-picker.jupiter22-date-picker--month-only > button > nsdq-icon"
-CALENDAR_USAGE = "svg > use"
+CALENDAR_USAGE = "svg"
 CALENDAR_MMYYYY_FIELD = "div.jupiter22-date-picker.jupiter22-date-picker--month-only.jupiter22-date-picker--popup > div > div.jupiter22-date-picker__widget--header > input"
 
 CALENDAR_BELT_TEXT = "div.jupiter22-time-belt.loaded > div.jupiter22-date-picker.jupiter22-date-picker--month-only.jupiter22-date-picker--popup > div > div.jupiter22-date-picker__header > h5"
