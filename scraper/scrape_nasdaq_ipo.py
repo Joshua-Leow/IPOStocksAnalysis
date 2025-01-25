@@ -5,6 +5,7 @@ from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.service import Service
 
 from config import *
@@ -85,16 +86,16 @@ def get_symbols_from_shadowhost(shadowhost, driver) -> List[str]:
     return symbols
 
 
-def get_symbols_list_from_month_year(base_url: str, driver_path: str) -> List[str]:
+def get_symbols_list(base_url: str, driver_path: str) -> List[str]:
     service = Service(driver_path)
     driver = webdriver.Chrome(service=service)
     try:
         driver.get(base_url)
 
             # opens calendar selection box
+        WebDriverWait(driver, 5).until(lambda x: x.find_element(By.CSS_SELECTOR, CLOSE_COOKIE_BUTTON))
+        driver.find_element(By.CSS_SELECTOR, CLOSE_COOKIE_BUTTON).click()
         calendar_icon_shadowhost = driver.find_element(By.CSS_SELECTOR, CALENDAR_ICON_SHADOWHOST)
-        driver.execute_script("arguments[0].scrollIntoView();", calendar_icon_shadowhost)
-        WebDriverWait(driver, 20).until(lambda x: x.find_element(By.CSS_SELECTOR, CALENDAR_ICON_SHADOWHOST))
         calendar_icon_shadow_root = driver.execute_script("return arguments[0].shadowRoot", calendar_icon_shadowhost)
         calendar_icon_shadow_root.find_element(By.CSS_SELECTOR, CALENDAR_USAGE).click()
         time.sleep(2)
@@ -129,7 +130,7 @@ def get_symbols_list_from_month_year(base_url: str, driver_path: str) -> List[st
     return priced_symbols
 
 def main():
-    print(get_symbols_list_from_month_year(NASDAQ_IPO_URL, CHROME_DRIVER_PATH))
+    print(get_symbols_list(NASDAQ_IPO_URL, CHROME_DRIVER_PATH))
 
 
 if __name__ == '__main__':
