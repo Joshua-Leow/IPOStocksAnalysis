@@ -127,6 +127,7 @@ def get_symbols_list(base_url: str, driver_path: str) -> List[str]:
         driver.quit()
 
     # return priced_symbols + filings_symbols
+    print(priced_symbols)
     return priced_symbols
 
 def main():

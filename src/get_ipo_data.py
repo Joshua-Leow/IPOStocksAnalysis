@@ -1,3 +1,5 @@
+import os
+
 import yfinance as yf
 import pandas as pd
 from pathlib import Path
@@ -10,13 +12,14 @@ from scraper.scrape_nasdaq_ipo import get_symbols_list
 # Function to save stock info as JSON
 def save_info_as_json(symbol, info):
     try:
-        info_path = Path(f"../data/ipo-dataset/{DESIRED_YEAR}/{DESIRED_MONTH}/{symbol}-info.json")
+        # Construct absolute path
+        info_path = Path(os.path.join(os.getcwd(), "data/ipo-dataset", str(DESIRED_YEAR), str(DESIRED_MONTH), f"{symbol}-info.json"))
         info_path.parent.mkdir(parents=True, exist_ok=True)
 
         with open(info_path, 'w') as json_file:
             json.dump(info, json_file, indent=4)
 
-        print(f"Saved info data for {symbol}")
+        print(f"        Saved info data for {symbol} to {info_path}")
     except Exception as e:
         print(f"Error saving info data for {symbol}: {e}")
 
@@ -31,17 +34,18 @@ def save_stock_data_to_csv(symbol, data):
         data.reset_index(inplace=True)
         data['Date'] = pd.to_datetime(data['Date'], errors='coerce').dt.strftime('%d%m%Y')
 
-        csv_path = Path(f"../data/ipo-dataset/{DESIRED_YEAR}/{DESIRED_MONTH}/{symbol}.csv")
+        # Construct absolute path
+        csv_path = Path(os.path.join(os.getcwd(), "data/ipo-dataset", str(DESIRED_YEAR), str(DESIRED_MONTH), f"{symbol}.csv"))
         csv_path.parent.mkdir(parents=True, exist_ok=True)
         data.to_csv(csv_path, header=True, index=False)
 
-        print(f"Saved historical data for {symbol}")
+        print(f"  Saved historical data for {symbol} to {csv_path}")
     except Exception as e:
         print(f"Error saving historical data for {symbol}: {e}")
 
 
 # Function to fetch and filter stock info
-def fetch_filtered_stock_info(symbol):
+def fetch_filtered_stock_info(symbol:str):
     try:
         stock = yf.Ticker(symbol)
         info = stock.info
@@ -52,7 +56,7 @@ def fetch_filtered_stock_info(symbol):
 
 
 # Function to fetch stock historical data
-def fetch_stock_history(symbol):
+def fetch_stock_history(symbol:str):
     try:
         stock = yf.Ticker(symbol)
         return stock.history(period="max")
@@ -62,7 +66,7 @@ def fetch_stock_history(symbol):
 
 
 # Main function to process all symbols
-def process_symbols(symbols):
+def process_symbols(symbols:str):
     for symbol in symbols:
         filtered_info = fetch_filtered_stock_info(symbol)
         if filtered_info:
