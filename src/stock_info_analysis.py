@@ -1,6 +1,7 @@
 import ast
 import json
 import os
+import time
 
 from pathlib import Path
 
@@ -182,21 +183,22 @@ def get_overall_ipo_data():
     # stock_symbols = ['AAPL', 'TSLA', 'GOOGL', 'INVALID_SYMBOL', 'MSFT']  # Replace with your list of stock symbols
     file_path = Path(os.path.join(os.getcwd(), f"data/ipo-dataset/all_ipo.txt"))
     with open(file_path, 'r') as file:
-        for i in range(45):
+        for i in range(59):
             next(file)
         full_string = ''
         for line in file:
+            time.sleep(10)
             stock_symbols = ast.literal_eval(line[11:-2])
             month_year = line[1:8]
 
             # Counters
             unable_to_fetch, less_than_1500, more_than_or_equal_1500 = 0, 0, 0
-
+            saved_symbol = []
             # Loop through each stock symbol
             for symbol in stock_symbols:
                 try:
                     # Fetch data
-                    data = yf.download(symbol, period="1d", progress=False, rounding=True)
+                    data = yf.download(symbol, period="max", progress=False, rounding=True)
 
                     # Check if data exists
                     if data.empty:
@@ -211,6 +213,8 @@ def get_overall_ipo_data():
                         if row_count < 1500:
                             less_than_1500 += 1
                         else:
+                            # TODO: continue here
+                            saved_symbol.append(symbol)
                             more_than_or_equal_1500 += 1
                 except YFRateLimitError as e:
                     # Handle rate-limit error
