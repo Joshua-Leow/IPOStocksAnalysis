@@ -8,4 +8,3 @@ env/
 .ipynb_checkpoints
 .DS_Store
 data/ipo-dataset/
-src/pipeline/
