@@ -90,7 +90,7 @@ def get_symbols_list(base_url: str, driver_path: str) -> List[str]:
     try:
         driver.get(base_url)
 
-            # opens calendar selection box
+        # opens calendar selection box
         WebDriverWait(driver, 5).until(lambda x: x.find_element(By.CSS_SELECTOR, CLOSE_COOKIE_BUTTON))
         driver.find_element(By.CSS_SELECTOR, CLOSE_COOKIE_BUTTON).click()
         calendar_icon_shadowhost = driver.find_element(By.CSS_SELECTOR, CALENDAR_ICON_SHADOWHOST)
@@ -98,10 +98,10 @@ def get_symbols_list(base_url: str, driver_path: str) -> List[str]:
         calendar_icon_shadow_root.find_element(By.CSS_SELECTOR, CALENDAR_USAGE).click()
         time.sleep(2)
 
-            # move to desired month and year
+        # move to desired month and year
         current_month_year = driver.find_element(By.CSS_SELECTOR, CALENDAR_BELT_TEXT).text
         num_of_months, months_left_right, num_of_years, years_left_right \
-                                            = calculate_date_differences(current_month_year, DESIRED_MONTH, DESIRED_YEAR)
+            = calculate_date_differences(current_month_year, DESIRED_MONTH, DESIRED_YEAR)
         if months_left_right == 'left':
             for i in range(num_of_months):
                 driver.find_element(By.CSS_SELECTOR, CALENDAR_BELT_MONTH_LEFT).click()
@@ -117,16 +117,41 @@ def get_symbols_list(base_url: str, driver_path: str) -> List[str]:
                 driver.find_element(By.CSS_SELECTOR, CALENDAR_BELT_YEAR_RIGHT).click()
         time.sleep(2)
 
-            # get symbols from table content
+        # get symbols from table content
         # upcoming_symbols = get_symbols_from_shadowhost(UPCOMING_SHADOWHOST, driver)
+        # print(f"Upcoming Symbols:\n{upcoming_symbols}")
         priced_symbols = get_symbols_from_shadowhost(PRICED_SHADOWHOST, driver)
+        # print(f"Priced Symbols:\n{priced_symbols}")
         # filings_symbols = get_symbols_from_shadowhost(FILINGS_SHADOWHOST, driver)
+        # print(f"Filings Symbols:\n{filings_symbols}")
+
     finally:
         driver.quit()
 
     # return priced_symbols + filings_symbols
-    print(priced_symbols)
     return priced_symbols
+
+def get_all_symbols_list(base_url: str, driver_path: str, num_of_months:int=12) -> List[str]:
+    service = Service(driver_path)
+    driver = webdriver.Chrome(service=service)
+    try:
+        driver.get(base_url)
+        # opens calendar selection box
+        WebDriverWait(driver, 5).until(lambda x: x.find_element(By.CSS_SELECTOR, CLOSE_COOKIE_BUTTON))
+        driver.find_element(By.CSS_SELECTOR, CLOSE_COOKIE_BUTTON).click()
+        calendar_icon_shadowhost = driver.find_element(By.CSS_SELECTOR, CALENDAR_ICON_SHADOWHOST)
+        calendar_icon_shadow_root = driver.execute_script("return arguments[0].shadowRoot", calendar_icon_shadowhost)
+        calendar_icon_shadow_root.find_element(By.CSS_SELECTOR, CALENDAR_USAGE).click()
+        time.sleep(2)
+        symbols = []
+        for i in range(num_of_months):
+            driver.find_element(By.CSS_SELECTOR, CALENDAR_BELT_MONTH_LEFT).click()
+            time.sleep(2)
+            priced_symbols = get_symbols_from_shadowhost(PRICED_SHADOWHOST, driver)
+            symbols += priced_symbols
+    finally:
+        driver.quit()
+    return symbols
 
 def main():
     print(get_symbols_list(NASDAQ_IPO_URL, CHROME_DRIVER_PATH))
