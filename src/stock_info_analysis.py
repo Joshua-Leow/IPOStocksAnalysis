@@ -114,83 +114,63 @@ Target/Recommendation: 8/10
 Total: 79/100
 """
 
+def normalize(value, min_value, max_value):
+    """
+    Normalize a value to a 0-1 scale based on its range.
+    """
+    return max(0, min(1, (value - min_value) / (max_value - min_value)))
+
 def evaluate_stock(data):
     """
-    Evaluate stock metrics and score the stock out of 100.
+    Evaluate stock metrics and score the stock out of 100 based on weighted attributes.
     """
+    # Attribute weightages (adjust based on importance)
+    weights = {
+        'trailingPE': 0.1,
+        'forwardPE': 0.1,
+        'priceToSalesTrailing12Months': 0.08,
+        'priceToBook': 0.08,
+        'returnOnAssets': 0.07,
+        'returnOnEquity': 0.07,
+        'profitMargins': 0.07,
+        'operatingMargins': 0.07,
+        'earningsQuarterlyGrowth': 0.06,
+        'revenueGrowth': 0.06,
+        'beta': 0.05,
+        'quickRatio': 0.05,
+        'currentRatio': 0.05,
+        'debtToEquity': 0.05,
+    }
+
+    # Ideal ranges for attributes (min_value, max_value)
+    ranges = {
+        'trailingPE': (5, 15),
+        'forwardPE': (5, 15),
+        'priceToSalesTrailing12Months': (1, 4),
+        'priceToBook': (0.5, 1.5),
+        'returnOnAssets': (0.05, 0.2),
+        'returnOnEquity': (0.1, 0.3),
+        'profitMargins': (0.3, 0.6),
+        'operatingMargins': (0.3, 0.6),
+        'earningsQuarterlyGrowth': (0.01, 0.2),
+        'revenueGrowth': (0.01, 0.1),
+        'beta': (0.5, 1.5),
+        'quickRatio': (1, 2),
+        'currentRatio': (1, 2),
+        'debtToEquity': (0, 1),
+    }
+
+    # Calculate score for each attribute
     score = 0
+    for attribute, weight in weights.items():
+        if attribute in data:
+            normalized_value = normalize(data[attribute], *ranges[attribute])
+            attribute_score = normalized_value * weight * 100
+            score += attribute_score
 
-    # Valuation Metrics
-    if 10 <= data['trailingPE'] <= 20:
-        score += 3
-    elif data['trailingPE'] < 10:
-        score += 4  # Undervalued but acceptable.
-
-    if 10 <= data['forwardPE'] <= 20:
-        score += 3
-    elif data['forwardPE'] < 10:
-        score += 4
-
-    if 1 <= data['priceToSalesTrailing12Months'] <= 3:
-        score += 3
-    elif data['priceToSalesTrailing12Months'] < 1:
-        score += 2  # Low but not ideal.
-
-    if data['priceToBook'] <= 1.5:
-        score += 4
-
-    # Profitability Metrics
-    if data['returnOnAssets'] > 0.05:
-        score += 5
-
-    if data['returnOnEquity'] > 0.1:
-        score += 5
-
-    if data['profitMargins'] > 0.1:
-        score += 5
-
-    if data['operatingMargins'] > 0.1:
-        score += 5
-
-    # Growth Metrics
-    if data['earningsQuarterlyGrowth'] > 0:
-        score += 3
-
-    if data['revenueGrowth'] > 0.05:
-        score += 2
-
-    # Risk and Volatility
-    if 0.8 <= data['beta'] <= 1.2:
-        score += 3
-    elif data['beta'] < 0.8:
-        score += 4  # Low beta indicates stability.
-
-    # Liquidity and Financial Health
-    if data['quickRatio'] > 1:
-        score += 3
-
-    if data['currentRatio'] > 1:
-        score += 3
-
-    if data['debtToEquity'] < 0.5:
-        score += 4
-
-    # Ownership and Sentiment
-    if data['heldPercentInsiders'] > 0.5:
-        score += 4
-
-    if data['shortRatio'] < 5:
-        score += 3
-
-    # Target and Recommendation
-    if data['targetMeanPrice'] > data['previousClose']:
-        score += 3
-
-    if data['recommendationMean'] <= 2.5:
-        score += 3
-
-    return score
-
+    # Cap score at 100
+    score = min(score, 100)
+    return round(score, 2)
 
 def main():
     # Read stock data from a JSON file
