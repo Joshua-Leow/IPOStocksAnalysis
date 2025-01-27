@@ -147,14 +147,16 @@ def get_all_symbols_list(base_url: str, driver_path: str, num_of_months:int=12) 
         for i in range(num_of_months):
             driver.find_element(By.CSS_SELECTOR, CALENDAR_BELT_MONTH_LEFT).click()
             time.sleep(2)
+            current_month_year = driver.find_element(By.CSS_SELECTOR, CALENDAR_BELT_TEXT).text
             priced_symbols = get_symbols_from_shadowhost(PRICED_SHADOWHOST, driver)
+            print(f'"{current_month_year}": {priced_symbols},')
             symbols += priced_symbols
     finally:
         driver.quit()
     return symbols
 
 def main():
-    print(get_symbols_list(NASDAQ_IPO_URL, CHROME_DRIVER_PATH))
+    print(get_all_symbols_list(NASDAQ_IPO_URL, CHROME_DRIVER_PATH, 336))
 
 
 if __name__ == '__main__':
