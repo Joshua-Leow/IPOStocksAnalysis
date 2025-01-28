@@ -98,8 +98,17 @@ def get_ipo_results():
                     print(f"An unexpected error occurred for {symbol}: {e}")
             # Print results
             print(string)
-
         return string
+
+def get_ipo_success_rate():
+    file_path = Path(os.path.join(os.getcwd(), f"data/ipo-dataset/all_ipo_data.txt"))
+    with open(file_path, 'r') as file:
+        for i in range(64):
+            next(file)
+        for line in file:
+            month_stats = ast.literal_eval(line.split('(')[1].split(')')[0]) # '41, 6, 4, 31'
+            month_year = line[:7]
+            print(f"{month_year}: {month_stats}")
 
 def plot_quarterly_resullts():
     # Read the data from the text file
@@ -139,4 +148,4 @@ def plot_quarterly_resullts():
 
 
 if __name__ == "__main__":
-    plot_quarterly_resullts()
+    get_ipo_success_rate()
