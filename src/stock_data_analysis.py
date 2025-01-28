@@ -1,6 +1,7 @@
 import ast
 import time
 import os
+from datetime import datetime
 from pathlib import Path
 import re
 import matplotlib.pyplot as plt
@@ -10,7 +11,7 @@ import yfinance as yf
 from yfinance.exceptions import YFTickerMissingError, YFRateLimitError
 
 
-def get_overall_ipo_data():
+def fetch_overall_ipo_data():
     # List of stock symbols
     # stock_symbols = ['AAPL', 'TSLA', 'GOOGL', 'INVALID_SYMBOL', 'MSFT']  # Replace with your list of stock symbols
     file_path = Path(os.path.join(os.getcwd(), f"data/ipo-dataset/all_ipo.txt"))
@@ -102,6 +103,8 @@ def get_ipo_results():
 
 def get_ipo_success_rate():
     file_path = Path(os.path.join(os.getcwd(), f"data/ipo-dataset/all_ipo_data.txt"))
+    today = datetime.today().strftime('%Y-%m-%d')
+    print(f"As of {today}:")
     with open(file_path, 'r') as file:
         for i in range(64):
             next(file)
