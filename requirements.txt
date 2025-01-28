@@ -12,3 +12,4 @@ scipy
 selenium
 mplfinance
 finplot
+investpy
