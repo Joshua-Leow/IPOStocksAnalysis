@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import finplot as fplt
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import precision_score
 
 
 def prepare_prediction_data(df):
@@ -13,7 +14,7 @@ def prepare_prediction_data(df):
         df.columns = [col[0] for col in df.columns]
 
     # Calculate Target first (5-day prediction)
-    df["Target"] = (df["Close"].shift(-5) > df["Close"]).astype(int)
+    df["Target"] = (df["Close"].shift(-3) > df["Close"]).astype(int)
 
     # Initialize predictors list
     predictors = []
@@ -62,13 +63,14 @@ def get_predictions(df, predictors):
 
     # Make predictions
     preds = model.predict_proba(test[predictors])[:, 1]
-    preds[preds >= 0.6] = 1
-    preds[preds < 0.6] = 0
+    preds[preds >= 0.7] = 1
+    preds[preds < 0.7] = 0
 
     # Create a Series with predictions for the entire dataset
     all_predictions = pd.Series(index=df.index, dtype=float)
     all_predictions.iloc[train_size:] = preds
 
+    print(all_predictions)
     return all_predictions
 
 
@@ -87,10 +89,12 @@ def enhanced_finplot_gold(period="730d", interval="1h"):
 
     # Prepare data and get predictions
     prepared_df, predictors = prepare_prediction_data(df)
+    print(prepared_df, predictors)
     predictions = get_predictions(prepared_df, predictors)
 
     # Add predictions back to original dataframe
     original_df.loc[predictions.index, 'predictions'] = predictions
+    # print(original_df)
 
     # Create plots
     ax, ax2 = fplt.create_plot('GOLD MACD with Trade Signals', rows=2)
