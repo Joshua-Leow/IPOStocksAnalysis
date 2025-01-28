@@ -1,6 +1,8 @@
 import time
 from typing import List
 
+import pandas as pd
+import requests
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -155,8 +157,24 @@ def get_all_symbols_list(base_url: str, driver_path: str, num_of_months:int=12) 
         driver.quit()
     return symbols
 
+def fetch_nasdaq_api():
+    url = 'https://api.nasdaq.com/api/ipo/calendar'
+    headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/113.0'}
+    start_date = '2023-1-1'
+    end_date = '2023-5-31'
+    periods = pd.period_range(start_date, end_date, freq='M')
+    dfs = []
+    for period in periods:
+        data = requests.get(url, headers=headers, params={'date': period}).json()
+        df = pd.json_normalize(data['data']['priced'], 'rows')
+        dfs.append(df)
+    df = pd.concat(dfs, ignore_index=True)
+    print(df)
+    print(df.columns)
+
 def main():
-    print(get_all_symbols_list(NASDAQ_IPO_URL, CHROME_DRIVER_PATH, 336))
+    # print(get_all_symbols_list(NASDAQ_IPO_URL, CHROME_DRIVER_PATH, 336))
+    fetch_nasdaq_api()
 
 
 if __name__ == '__main__':
