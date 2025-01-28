@@ -67,11 +67,11 @@ def finplot_bitcoin_longterm():
     fplt.show()
 
 def finplot_spy_longterm():
-    symbol = 'SPY'
+    symbol = 'GC=F'
     interval = '1h'
-    df = yf.download(symbol, interval=interval)
+    df = yf.download(symbol, period="730d", interval=interval, ignore_tz = True, progress=False)
 
-    ax, ax2 = fplt.create_plot('S&P 500 MACD', rows=2)
+    ax, ax2 = fplt.create_plot('GOLD MACD', rows=2)
 
     # plot macd with standard colors first
     macd = df.Close.ewm(span=12).mean() - df.Close.ewm(span=26).mean()
