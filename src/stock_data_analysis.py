@@ -2,6 +2,9 @@ import ast
 import time
 import os
 from pathlib import Path
+import re
+import matplotlib.pyplot as plt
+import numpy as np
 
 import yfinance as yf
 from yfinance.exceptions import YFTickerMissingError, YFRateLimitError
@@ -98,6 +101,42 @@ def get_ipo_results():
 
         return string
 
+def plot_quarterly_resullts():
+    # Read the data from the text file
+    file_path = Path(os.path.join(os.getcwd(), f"data/ipo-dataset/quarterly_results.txt"))
+    with open(file_path, 'r') as file:
+        data = file.read()
+
+    # Regular expression to extract values
+    pattern = r"\((\d+), '(-?\d+\.\d+)'\)"
+    matches = re.findall(pattern, data)
+
+    # Organize the extracted data
+    row_dict = {}
+    for match in matches:
+        row_num = int(match[0])
+        percentage = float(match[1])
+        if row_num not in row_dict:
+            row_dict[row_num] = []
+        row_dict[row_num].append(percentage)
+    print(row_dict)
+
+    # Calculate the average for each row number
+    row_nums = sorted(row_dict.keys())
+    averages = [np.mean(row_dict[row_num]) for row_num in row_nums]
+    print(averages)
+
+    # Plot the data
+    plt.figure(figsize=(10, 6))
+    plt.plot(row_nums, averages, label="Average Percentage Change", marker='o')
+    plt.axhline(0, color='gray', linestyle='--', linewidth=1, label="0% Line")
+    plt.title("Average Percentage Change Over Time")
+    plt.xlabel("Row Numbers")
+    plt.ylabel("Percentage Change (%)")
+    plt.legend()
+    plt.grid(alpha=0.5)
+    plt.show()
+
 
 if __name__ == "__main__":
-    get_ipo_results()
+    plot_quarterly_resullts()
