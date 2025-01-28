@@ -68,7 +68,7 @@ def get_ipo_results():
             next(file)
         for line in file:
             above_1500_symbols = ast.literal_eval(line.split(')')[1])
-            month_stats = ast.literal_eval(line.split('(')[1].split(')')[0]) # '41, 6, 4, 31'
+            month_stats = ast.literal_eval(line.split('(')[1].split(')')[0]) # '(41, 6, 4, 31)'
             month_year = line[:7]
             string = month_year + ': '
 
@@ -106,7 +106,7 @@ def get_ipo_success_rate():
         for i in range(64):
             next(file)
         for line in file:
-            month_stats = ast.literal_eval(line.split('(')[1].split(')')[0]) # '41, 6, 4, 31'
+            month_stats = ast.literal_eval(line.split('(')[1].split(')')[0]) # '(41, 6, 4, 31)'
             month_year = line[:7]
             print(f"{month_year}: {month_stats}")
 
