@@ -1,11 +1,8 @@
-import ast
 import json
 import os
-import time
 
 from pathlib import Path
 
-from yfinance.exceptions import YFTickerMissingError, YFRateLimitError
 
 from src.config import *
 
@@ -176,69 +173,6 @@ def evaluate_stock(data):
     score = min(score, 100)
     return round(score, 2)
 
-def get_overall_ipo_data():
-    import yfinance as yf
-
-    # List of stock symbols
-    # stock_symbols = ['AAPL', 'TSLA', 'GOOGL', 'INVALID_SYMBOL', 'MSFT']  # Replace with your list of stock symbols
-    file_path = Path(os.path.join(os.getcwd(), f"data/ipo-dataset/all_ipo.txt"))
-    with open(file_path, 'r') as file:
-        for i in range(59):
-            next(file)
-        full_string = ''
-        for line in file:
-            time.sleep(10)
-            stock_symbols = ast.literal_eval(line[11:-2])
-            month_year = line[1:8]
-
-            # Counters
-            unable_to_fetch, less_than_1500, more_than_or_equal_1500 = 0, 0, 0
-            saved_symbol = []
-            # Loop through each stock symbol
-            for symbol in stock_symbols:
-                try:
-                    # Fetch data
-                    data = yf.download(symbol, period="max", progress=False, rounding=True)
-
-                    # Check if data exists
-                    if data.empty:
-                        unable_to_fetch += 1
-                    elif 'error' in data.columns or data.isnull().all().all():
-                        # Explicitly handle unexpected errors returned in the data
-                        print(f"Error fetching data for {symbol}.")
-                        unable_to_fetch += 1
-                    else:
-                        # Check the number of rows
-                        row_count = data.shape[0]
-                        if row_count < 1500:
-                            less_than_1500 += 1
-                        else:
-                            # TODO: continue here
-                            saved_symbol.append(symbol)
-                            more_than_or_equal_1500 += 1
-                except YFRateLimitError as e:
-                    # Handle rate-limit error
-                    print(f"Rate limit reached while processing {symbol}: {e}")
-                    break
-                except YFTickerMissingError:
-                    # Handle missing prices error
-                    unable_to_fetch += 1
-                except Exception as e:
-                    # Handle unexpected errors
-                    print(f"An unexpected error occurred for {symbol}: {e}")
-
-            # Print results
-            # print(f"{month_year}: (total, >1500, <1500, invalid)", end=': ')
-            # print(f"({len(stock_symbols)}", end=', ')
-            # print(f"{more_than_or_equal_1500}", end=', ')
-            # print(f"{less_than_1500}", end=', ')
-            # print(f"{unable_to_fetch})")
-            string = (f"{month_year}: {stock_symbols}, "
-                       f"({len(stock_symbols)}, {more_than_or_equal_1500}, {less_than_1500}, {unable_to_fetch})")
-            print(string)
-            full_string = f"{full_string}\n{string}"
-            print(full_string)
-
 
 def main():
     # Read stock data from a JSON file
@@ -259,5 +193,4 @@ def main():
         print("The stock is not a good buy.")
 
 if __name__ == "__main__":
-    # main()
-    get_overall_ipo_data()
+    main()
