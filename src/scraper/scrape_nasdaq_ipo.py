@@ -1,8 +1,10 @@
+import os
 import time
 from typing import List
 
 import pandas as pd
 import requests
+from pathlib import Path
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -160,17 +162,25 @@ def get_all_symbols_list(base_url: str, driver_path: str, num_of_months:int=12) 
 def fetch_nasdaq_api():
     url = 'https://api.nasdaq.com/api/ipo/calendar'
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/113.0'}
-    start_date = '2023-1-1'
-    end_date = '2023-5-31'
+    start_date = START_DATE
+    end_date = END_DATE
     periods = pd.period_range(start_date, end_date, freq='M')
     dfs = []
     for period in periods:
         data = requests.get(url, headers=headers, params={'date': period}).json()
         df = pd.json_normalize(data['data']['priced'], 'rows')
+        # drop priced columns:
+        df = df.drop(columns=['dealID', 'proposedTickerSymbol', 'proposedExchange',
+               'proposedSharePrice', 'sharesOffered',
+               'dollarValueOfSharesOffered', 'dealStatus'])
+        # drop withdrawn columns:
+       #  df = df.drop(columns=['dealID', 'proposedTickerSymbol', 'proposedExchange',
+       # 'sharesOffered', 'filedDate', 'dollarValueOfSharesOffered'])
         dfs.append(df)
     df = pd.concat(dfs, ignore_index=True)
     print(df)
-    print(df.columns)
+    path_to_save = Path(os.path.join(os.getcwd(), f"data/ipo-dataset/2024/priced.csv"))
+    # df.to_csv(path_to_save)
 
 def main():
     # print(get_all_symbols_list(NASDAQ_IPO_URL, CHROME_DRIVER_PATH, 336))

@@ -1,4 +1,5 @@
 # config.py
+from datetime import datetime
 
 # Path to WebDriver
 CHROME_DRIVER_PATH = "/Users/joshualeow/Documents/Projects/IPOStocksAnalysis/resources/chromedriver-mac-arm64/chromedriver"
@@ -15,6 +16,11 @@ HEADERS = {
 # TODO: get year and month_num from "https://www.nasdaq.com/market-activity/ipos"
 DESIRED_YEAR = 2021
 DESIRED_MONTH = 9
+
+# API
+START_DATE = '1997-1-1'
+END_DATE = '1997-1-31'
+# END_DATE = datetime.today().strftime('%Y-%m-%d')
 
 selected_attributes = [
     'trailingPE', 'forwardPE', 'priceToSalesTrailing12Months', 'priceToBook',
