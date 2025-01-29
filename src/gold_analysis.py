@@ -1,3 +1,4 @@
+import math
 import os
 
 import yfinance as yf
@@ -21,7 +22,7 @@ def get_period(interval):
 def fetch_data(symbol, interval):
     period=get_period(interval)
     df = yf.download(symbol, period=period, interval=interval, ignore_tz=True, progress=False)
-    df.to_csv(Path(os.path.join(os.getcwd(), f"data/{symbol}_{interval}.csv")))
+    # df.to_csv(Path(os.path.join(os.getcwd(), f"data/{symbol}_{interval}.csv")))
     return df
 
 def preprocess_data(df):
@@ -36,9 +37,9 @@ def preprocess_data(df):
 def predict(train, test, predictors, model):
     model.fit(train[predictors], train["Target"])
     preds = model.predict_proba(test[predictors])[:, 1]
-    preds[preds >= .8] = 1
-    preds[preds < .2] = 0
-    preds[(preds >= 0.2) & (preds < 0.8)] = None
+    preds[preds >= .9] = 1
+    preds[preds < .1] = 0
+    preds[(preds >= 0.1) & (preds < 0.9)] = None
     preds = pd.Series(preds, index=test.index, name="Predictions")
     combined = pd.concat([test["Target"], preds], axis=1)
     return combined
@@ -172,7 +173,7 @@ def main():
     print("  5. Preparing model...")
     model = RandomForestClassifier(n_estimators=200, min_samples_split=50, random_state=1)
 
-    print("  6. Backtesting model...")
+    print("  6. Making Predictions...")
     predictions = backtest(df, model, close_ratio_trend_predictors)
 
     print(predictions["Predictions"].value_counts())
