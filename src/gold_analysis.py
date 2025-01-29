@@ -125,7 +125,8 @@ def plot_finplot(df, predictions):
 
 
     def update_legend_text(x, y):
-        row = original_df.loc[pd.to_datetime(x, unit='ns')]
+        row = original_df.loc[pd.to_datetime(x, unit='ns')] if pd.to_datetime(x, unit='ns') in original_df.index else None
+        if row is None: return
         fmt = '<span style="color:#%s">%%.2f</span>' % ('0b0' if (row.Open < row.Close).all() else 'a00')
         rawtxt = '<span style="font-size:13px">%%s %%s</span> &nbsp; O%s C%s H%s L%s' % (fmt, fmt, fmt, fmt)
         values = [row.Open, row.Close, row.High, row.Low]
@@ -145,7 +146,7 @@ def plot_finplot(df, predictions):
         return xtext, ytext
 
 
-    # fplt.set_mouse_callback(update_legend_text, ax=ax, when='hover')
+    fplt.set_mouse_callback(update_legend_text, ax=ax, when='hover')
     fplt.add_crosshair_info(update_crosshair_text, ax=ax)
     fplt.show()
 
