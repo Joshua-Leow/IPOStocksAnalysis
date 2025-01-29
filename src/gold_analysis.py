@@ -180,10 +180,10 @@ def main():
     print(predictions["Target"].value_counts() / predictions.shape[0])
 
     print("  8. Ploting Chart...")
+    plot_finplot(df, predictions)
     print("############## COMMAND TO KILL PROCESS: ###############\n"
           "ps | grep gold_analysis | awk '{print $1}' | xargs kill\n"
           "#######################################################\n")
-    plot_finplot(df, predictions)
 
 
 if __name__ == "__main__":
