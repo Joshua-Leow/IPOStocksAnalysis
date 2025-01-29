@@ -34,6 +34,33 @@ def preprocess_data(df):
     df = df.loc["1990-01-01":].copy()
     return df
 
+def get_macd(original_df):
+    macd = original_df.Close.ewm(span=12).mean() - original_df.Close.ewm(span=26).mean()
+    signal = macd.ewm(span=9).mean()
+    original_df['macd_diff'] = macd - signal
+    return original_df
+
+def get_close_ratio_and_trend(df):
+    horizons = [2, 5, 60, 250, 1000]
+    new_predictors = []
+
+    for horizon in horizons:
+        rolling_averages = df.rolling(horizon).mean()
+
+        ratio_column = f"Close_Ratio_{horizon}"
+        df[ratio_column] = df["Close"] / rolling_averages["Close"]
+
+        trend_column = f"Trend_{horizon}"
+        df[trend_column] = df.shift(1).rolling(horizon).sum()["Target"]
+
+        new_predictors += [ratio_column, trend_column]
+    return new_predictors
+
+def final_processing(df):
+    df = df.dropna(subset=df.columns[df.columns != "Tomorrow"])
+    # df = df.dropna()
+    return df
+
 def predict(train, test, predictors, model):
     model.fit(train[predictors], train["Target"])
     preds = model.predict_proba(test[predictors])[:, 1]
@@ -54,30 +81,6 @@ def backtest(data, model, predictors, start=2400, step=240):
         all_predictions.append(predictions)
 
     return pd.concat(all_predictions)
-
-
-def get_close_ratio_and_trend(df):
-    horizons = [2, 5, 60, 250, 1000]
-    new_predictors = []
-
-    for horizon in horizons:
-        rolling_averages = df.rolling(horizon).mean()
-
-        ratio_column = f"Close_Ratio_{horizon}"
-        df[ratio_column] = df["Close"] / rolling_averages["Close"]
-
-        trend_column = f"Trend_{horizon}"
-        df[trend_column] = df.shift(1).rolling(horizon).sum()["Target"]
-
-        new_predictors += [ratio_column, trend_column]
-    return new_predictors
-
-
-def final_processing(df):
-    df = df.dropna(subset=df.columns[df.columns != "Tomorrow"])
-    # df = df.dropna()
-    return df
-
 
 def plot_finplot(df, predictions):
     original_df = df.copy()
@@ -123,10 +126,8 @@ def plot_finplot(df, predictions):
     # Add hover information
     hover_label = fplt.add_legend('', ax=ax)
 
-
     def update_legend_text(x, y):
-        row = original_df.loc[pd.to_datetime(x, unit='ns')] if pd.to_datetime(x, unit='ns') in original_df.index else None
-        if row is None: return
+        row = original_df.loc[pd.to_datetime(x, unit='ns', utc=True).tz_convert('Asia/Singapore')]
         fmt = '<span style="color:#%s">%%.2f</span>' % ('0b0' if (row.Open < row.Close).all() else 'a00')
         rawtxt = '<span style="font-size:13px">%%s %%s</span> &nbsp; O%s C%s H%s L%s' % (fmt, fmt, fmt, fmt)
         values = [row.Open, row.Close, row.High, row.Low]
@@ -145,7 +146,7 @@ def plot_finplot(df, predictions):
         ytext = '%s (Close%+.2f)' % (ytext, (y - original_df.iloc[x].Close))
         return xtext, ytext
 
-
+    print(original_df.columns)
     fplt.set_mouse_callback(update_legend_text, ax=ax, when='hover')
     fplt.add_crosshair_info(update_crosshair_text, ax=ax)
     fplt.show()
@@ -160,8 +161,11 @@ def main():
     print("  2. Pre-processing data...")
     df = preprocess_data(df)
 
-    print("  3. Getting Close Ratio and Trend Predictors...")
-    close_ratio_trend_predictors = get_close_ratio_and_trend(df)
+    print("  3. Feature Engineering...")
+    df = get_macd(df)
+    predictors = get_close_ratio_and_trend(df)
+    predictors.append("macd_diff")
+    print(predictors)
 
     print("  4. Final Processing of data...")
     df = final_processing(df)
@@ -170,7 +174,7 @@ def main():
     model = RandomForestClassifier(n_estimators=200, min_samples_split=50, random_state=1)
 
     print("  6. Making Predictions...")
-    predictions = backtest(df, model, close_ratio_trend_predictors)
+    predictions = backtest(df, model, predictors)
 
     print(predictions["Predictions"].value_counts())
     filtered_predictions = predictions.dropna(subset=["Predictions"])
