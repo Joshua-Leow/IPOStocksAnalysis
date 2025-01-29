@@ -12,21 +12,23 @@ def get_period(interval):
         return 'max'
     elif interval == '1h':
         return '730d'
+    elif interval == '5m':
+        return '60d'
     elif interval == '1m':
-        return '7d'
+        return '8d'
 
 
 def fetch_data(symbol, interval):
     period=get_period(interval)
     df = yf.download(symbol, period=period, interval=interval, ignore_tz=True, progress=False)
-    # df.to_csv(Path(os.path.join(os.getcwd(), f"data/{symbol}_{period}.csv")))
+    df.to_csv(Path(os.path.join(os.getcwd(), f"data/{symbol}_{interval}.csv")))
     return df
 
 def preprocess_data(df):
     df.index = pd.to_datetime(df.index, utc=True).map(lambda x: x.tz_convert('Singapore'))
     df.columns = df.columns.droplevel(1)
 
-    df["Tomorrow"] = df["Close"].shift(-3)
+    df["Tomorrow"] = df["Close"].shift(-5)
     df["Target"] = (df["Tomorrow"] > df["Close"]).astype(int)
     df = df.loc["1990-01-01":].copy()
     return df
@@ -34,9 +36,9 @@ def preprocess_data(df):
 def predict(train, test, predictors, model):
     model.fit(train[predictors], train["Target"])
     preds = model.predict_proba(test[predictors])[:, 1]
-    preds[preds >= .7] = 1
-    preds[preds < .3] = 0
-    preds[(preds >= 0.3) & (preds < 0.7)] = None
+    preds[preds >= .8] = 1
+    preds[preds < .2] = 0
+    preds[(preds >= 0.2) & (preds < 0.8)] = None
     preds = pd.Series(preds, index=test.index, name="Predictions")
     combined = pd.concat([test["Target"], preds], axis=1)
     return combined
@@ -67,12 +69,12 @@ def get_close_ratio_and_trend(df):
         df[trend_column] = df.shift(1).rolling(horizon).sum()["Target"]
 
         new_predictors += [ratio_column, trend_column]
-        return new_predictors
+    return new_predictors
 
 
 def final_processing(df):
-    # df = df.dropna(subset=df.columns[df.columns != "Tomorrow"])
-    df = df.dropna()
+    df = df.dropna(subset=df.columns[df.columns != "Tomorrow"])
+    # df = df.dropna()
     return df
 
 
@@ -102,13 +104,13 @@ def plot_finplot(df, predictions):
 
     # Plot buy signals (green triangles)
     if len(buy_signals) > 0:
-        buy_prices = original_df.loc[buy_signals, 'Low'].values * 0.999
+        buy_prices = original_df.loc[buy_signals, 'Low'].values * 0.9999
         fplt.plot(pd.Series(index=buy_signals, data=buy_prices), ax=ax, color='#0f0', marker='^',
                   legend='Buy Signal', size=5)
 
     # Plot sell signals (red triangles)
     if len(sell_signals) > 0:
-        sell_prices = original_df.loc[sell_signals, 'High'].values * 1.001
+        sell_prices = original_df.loc[sell_signals, 'High'].values * 1.0001
         fplt.plot(pd.Series(index=sell_signals, data=sell_prices), ax=ax, color='#f00', marker='v',
                   legend='Sell Signal', size=5)
 
@@ -145,11 +147,15 @@ def plot_finplot(df, predictions):
     fplt.set_mouse_callback(update_legend_text, ax=ax, when='hover')
     fplt.add_crosshair_info(update_crosshair_text, ax=ax)
 
+    print("\n############## COMMAND TO KILL PROCESS: ###############\n"
+            "ps | grep gold_analysis | awk '{print $1}' | xargs kill\n"
+            "#######################################################\n")
+
     fplt.show()
 
 
 def main():
-    symbol, interval = 'GC=F', '1h'
+    symbol, interval = 'GC=F', '5m'
 
     print("  1. Fetching data...")
     df = fetch_data(symbol, interval)
