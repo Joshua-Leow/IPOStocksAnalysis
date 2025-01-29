@@ -1,160 +1,144 @@
 import yfinance as yf
 import pandas as pd
-import numpy as np
+import os
+from pathlib import Path
 import finplot as fplt
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import precision_score
 
 
-def prepare_prediction_data(df):
-    """Prepare data for prediction model"""
-    # Make a copy and flatten MultiIndex if it exists
-    df = df.copy()
-    if isinstance(df.columns, pd.MultiIndex):
-        df.columns = [col[0] for col in df.columns]
+info_path = Path(os.path.join(os.getcwd(), f"resources/sp50e0.csv"))
+if os.path.exists(info_path):
+    sp500 = pd.read_csv(info_path, index_col=0)
+else:
+    sp500 = yf.download('GC=F', period="730d", interval='1h', ignore_tz=True, progress=False)
+    # sp500.to_csv("sp500.csv")
 
-    # Calculate Target first (5-day prediction)
-    df["Target"] = (df["Close"].shift(-3) > df["Close"]).astype(int)
+sp500.index = pd.to_datetime(sp500.index, utc=True).map(lambda x: x.tz_convert('Singapore'))
+sp500.columns = sp500.columns.droplevel(1)
 
-    # Initialize predictors list
-    predictors = []
-    horizons = [2, 5, 60, 250, 1000]
+sp500["Tomorrow"] = sp500["Close"].shift(-3)
+sp500["Target"] = (sp500["Tomorrow"] > sp500["Close"]).astype(int)
+sp500 = sp500.loc["1990-01-01":].copy()
 
-    # Calculate features
-    for horizon in horizons:
-        # Rolling averages
-        rolling_averages = df[["Close"]].rolling(window=horizon).mean()
-
-        # Ratio to moving average
-        ratio_column = f"Close_Ratio_{horizon}"
-        df[ratio_column] = df["Close"] / rolling_averages["Close"]
-        predictors.append(ratio_column)
-
-        # Trend feature
-        trend_column = f"Trend_{horizon}"
-        df[trend_column] = df["Target"].shift(1).rolling(window=horizon).mean()
-        predictors.append(trend_column)
-
-    # Drop NaN values
-    df = df.dropna()
-
-    return df, predictors
-
-
-def get_predictions(df, predictors):
-    """Get trading signals using the RandomForest model"""
-    if len(df) == 0:
-        return pd.Series(dtype=float)
-
-    model = RandomForestClassifier(n_estimators=200, min_samples_split=50, random_state=1)
-
-    # Use 80% of data for training
-    train_size = int(len(df) * 0.8)
-    train = df.iloc[:train_size]
-    test = df.iloc[train_size:]
-
-    # Verify columns exist
-    missing_cols = [col for col in predictors + ["Target"] if col not in train.columns]
-    if missing_cols:
-        raise KeyError(f"Missing columns: {missing_cols}")
-
-    # Fit model
+def predict(train, test, predictors, model):
     model.fit(train[predictors], train["Target"])
-
-    # Make predictions
     preds = model.predict_proba(test[predictors])[:, 1]
-    preds[preds >= 0.7] = 1
-    preds[preds < 0.7] = 0
+    preds[preds >= .7] = 1
+    preds[preds < .3] = 0
+    preds[(preds >= 0.3) & (preds < 0.7)] = None
+    preds = pd.Series(preds, index=test.index, name="Predictions")
+    combined = pd.concat([test["Target"], preds], axis=1)
+    return combined
 
-    # Create a Series with predictions for the entire dataset
-    all_predictions = pd.Series(index=df.index, dtype=float)
-    all_predictions.iloc[train_size:] = preds
+def backtest(data, model, predictors, start=2400, step=240):
+    all_predictions = []
 
-    print(all_predictions)
-    return all_predictions
+    for i in range(start, data.shape[0], step):
+        train = data.iloc[0:i - 10].copy()
+        test = data.iloc[i:(i + step)].copy()
+        predictions = predict(train, test, predictors, model)
+        all_predictions.append(predictions)
 
-
-def enhanced_finplot_gold(period="730d", interval="1h"):
-    """Enhanced visualization with trade markers"""
-    # Download data
-    symbol = 'GC=F'
-    df = yf.download(symbol, period=period, interval=interval, ignore_tz=True, progress=False)
-
-    # Flatten MultiIndex columns if they exist
-    if isinstance(df.columns, pd.MultiIndex):
-        df.columns = [col[0] for col in df.columns]
-
-    # Store original index for plotting
-    original_df = df.copy()
-
-    # Prepare data and get predictions
-    prepared_df, predictors = prepare_prediction_data(df)
-    print(prepared_df, predictors)
-    predictions = get_predictions(prepared_df, predictors)
-
-    # Add predictions back to original dataframe
-    original_df.loc[predictions.index, 'predictions'] = predictions
-    # print(original_df)
-
-    # Create plots
-    ax, ax2 = fplt.create_plot('GOLD MACD with Trade Signals', rows=2)
-
-    # Plot MACD
-    macd = original_df.Close.ewm(span=12).mean() - original_df.Close.ewm(span=26).mean()
-    signal = macd.ewm(span=9).mean()
-    original_df['macd_diff'] = macd - signal
-    fplt.volume_ocv(original_df[['Open', 'Close', 'macd_diff']], ax=ax2, colorfunc=fplt.strength_colorfilter)
-    fplt.plot(macd, ax=ax2, legend='MACD')
-    fplt.plot(signal, ax=ax2, legend='Signal')
-
-    # Plot candlesticks
-    fplt.candlestick_ochl(original_df[['Open', 'Close', 'High', 'Low']], ax=ax)
-
-    # Add trade markers
-    buy_signals = original_df[original_df['predictions'] == 1].index
-    sell_signals = original_df[original_df['predictions'] == 0].index
-
-    # Plot buy signals (green triangles)
-    if len(buy_signals) > 0:
-        buy_prices = original_df.loc[buy_signals, 'Low'].values * 0.999
-        fplt.plot(pd.Series(index=buy_signals, data=buy_prices), ax=ax, color='#0f0', marker='^',
-                  legend='Buy Signal', size=3)
-
-    # Plot sell signals (red triangles)
-    if len(sell_signals) > 0:
-        sell_prices = original_df.loc[sell_signals, 'High'].values * 1.001
-        fplt.plot(pd.Series(index=sell_signals, data=sell_prices), ax=ax, color='#f00', marker='v',
-                  legend='Sell Signal', size=3)
-
-    # Add volume
-    axo = ax.overlay()
-    fplt.volume_ocv(original_df[['Open', 'Close', 'Volume']], ax=axo)
-    fplt.plot(original_df.Volume.ewm(span=24).mean(), ax=axo, color=1)
-
-    # Add hover information
-    hover_label = fplt.add_legend('', ax=ax)
-
-    def update_legend_text(x, y):
-        row = original_df.loc[pd.to_datetime(x, unit='ns')]
-        fmt = '<span style="color:#%s">%%.2f</span>' % ('0b0' if (row.Open < row.Close).all() else 'a00')
-        rawtxt = '<span style="font-size:13px">%%s %%s</span> &nbsp; O%s C%s H%s L%s' % (fmt, fmt, fmt, fmt)
-        values = [row.Open, row.Close, row.High, row.Low]
-
-        if 'predictions' in row and not pd.isna(row.predictions):
-            signal_type = "BUY" if row.predictions == 1 else "SELL"
-            rawtxt += f' <span style="color:#{"0b0" if signal_type == "BUY" else "a00"}">{signal_type}</span>'
-
-        hover_label.setText(rawtxt % tuple([symbol, interval.upper()] + values))
-
-    def update_crosshair_text(x, y, xtext, ytext):
-        ytext = '%s (Close%+.2f)' % (ytext, (y - original_df.iloc[x].Close))
-        return xtext, ytext
-
-    fplt.set_mouse_callback(update_legend_text, ax=ax, when='hover')
-    fplt.add_crosshair_info(update_crosshair_text, ax=ax)
-
-    fplt.show()
+    return pd.concat(all_predictions)
 
 
-# Call the function to display the plot
-enhanced_finplot_gold()
+horizons = [2, 5, 60, 250, 1000]
+new_predictors = []
+
+for horizon in horizons:
+    rolling_averages = sp500.rolling(horizon).mean()
+
+    ratio_column = f"Close_Ratio_{horizon}"
+    sp500[ratio_column] = sp500["Close"] / rolling_averages["Close"]
+
+    trend_column = f"Trend_{horizon}"
+    sp500[trend_column] = sp500.shift(1).rolling(horizon).sum()["Target"]
+
+    new_predictors += [ratio_column, trend_column]
+# sp500 = sp500.dropna(subset=sp500.columns[sp500.columns != "Tomorrow"])
+
+
+sp500 = sp500.dropna()
+
+print("Preparing model...")
+model = RandomForestClassifier(n_estimators=200, min_samples_split=50, random_state=1)
+print("Backtesting model...")
+predictions = backtest(sp500, model, new_predictors)
+print(predictions["Predictions"].value_counts())
+filtered_predictions = predictions.dropna(subset=["Predictions"])
+precision = precision_score(filtered_predictions["Target"], filtered_predictions["Predictions"])
+print("Precision Score:", precision)
+print(predictions["Target"].value_counts() / predictions.shape[0])
+
+
+original_df = sp500.copy()
+# Add predictions back to original dataframe
+original_df = pd.merge(original_df, predictions, on='Datetime', how='inner')
+# print(original_df)
+
+
+# Create plots
+ax, ax2 = fplt.create_plot('GOLD MACD with Trade Signals', rows=2)
+
+# Plot MACD
+macd = original_df.Close.ewm(span=12).mean() - original_df.Close.ewm(span=26).mean()
+signal = macd.ewm(span=9).mean()
+original_df['macd_diff'] = macd - signal
+fplt.volume_ocv(original_df[['Open', 'Close', 'macd_diff']], ax=ax2, colorfunc=fplt.strength_colorfilter)
+fplt.plot(macd, ax=ax2, legend='MACD')
+fplt.plot(signal, ax=ax2, legend='Signal')
+
+# Plot candlesticks
+fplt.candlestick_ochl(original_df[['Open', 'Close', 'High', 'Low']], ax=ax)
+
+# Add trade markers
+buy_signals = original_df[original_df['Predictions'] == 1].index
+sell_signals = original_df[original_df['Predictions'] == 0].index
+
+# Plot buy signals (green triangles)
+if len(buy_signals) > 0:
+    buy_prices = original_df.loc[buy_signals, 'Low'].values * 0.999
+    fplt.plot(pd.Series(index=buy_signals, data=buy_prices), ax=ax, color='#0f0', marker='^',
+              legend='Buy Signal', size=5)
+
+# Plot sell signals (red triangles)
+if len(sell_signals) > 0:
+    sell_prices = original_df.loc[sell_signals, 'High'].values * 1.001
+    fplt.plot(pd.Series(index=sell_signals, data=sell_prices), ax=ax, color='#f00', marker='v',
+              legend='Sell Signal', size=5)
+
+# Add volume
+axo = ax.overlay()
+fplt.volume_ocv(original_df[['Open', 'Close', 'Volume']], ax=axo)
+fplt.plot(original_df.Volume.ewm(span=24).mean(), ax=axo, color=1)
+
+# Add hover information
+hover_label = fplt.add_legend('', ax=ax)
+
+
+def update_legend_text(x, y):
+    row = original_df.loc[pd.to_datetime(x, unit='ns')]
+    fmt = '<span style="color:#%s">%%.2f</span>' % ('0b0' if (row.Open < row.Close).all() else 'a00')
+    rawtxt = '<span style="font-size:13px">%%s %%s</span> &nbsp; O%s C%s H%s L%s' % (fmt, fmt, fmt, fmt)
+    values = [row.Open, row.Close, row.High, row.Low]
+
+    if 'Predictions' in row and not pd.isna(row.Predictions):
+        if row.Predictions == 1:
+            signal_type = "BUY"
+        elif row.Predictions == 0:
+            signal_type = "SELL"
+        rawtxt += f' <span style="color:#{"0b0" if signal_type == "BUY" else "a00"}">{signal_type}</span>'
+
+    hover_label.setText(rawtxt % tuple([symbol, interval.upper()] + values))
+
+
+def update_crosshair_text(x, y, xtext, ytext):
+    ytext = '%s (Close%+.2f)' % (ytext, (y - original_df.iloc[x].Close))
+    return xtext, ytext
+
+
+fplt.set_mouse_callback(update_legend_text, ax=ax, when='hover')
+fplt.add_crosshair_info(update_crosshair_text, ax=ax)
+
+fplt.show()
