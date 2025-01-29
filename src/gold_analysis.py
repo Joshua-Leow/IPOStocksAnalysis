@@ -7,7 +7,6 @@ from pathlib import Path
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import precision_score
 
-
 def get_period(interval):
     if interval == '1d' or interval == '1w':
         return 'max'
@@ -15,6 +14,7 @@ def get_period(interval):
         return '730d'
     elif interval == '1m':
         return '7d'
+
 
 def fetch_data(symbol, interval):
     period=get_period(interval)
