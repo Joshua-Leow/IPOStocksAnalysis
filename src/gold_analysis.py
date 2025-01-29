@@ -145,13 +145,8 @@ def plot_finplot(df, predictions):
         return xtext, ytext
 
 
-    fplt.set_mouse_callback(update_legend_text, ax=ax, when='hover')
+    # fplt.set_mouse_callback(update_legend_text, ax=ax, when='hover')
     fplt.add_crosshair_info(update_crosshair_text, ax=ax)
-
-    print("\n############## COMMAND TO KILL PROCESS: ###############\n"
-            "ps | grep gold_analysis | awk '{print $1}' | xargs kill\n"
-            "#######################################################\n")
-
     fplt.show()
 
 
@@ -185,6 +180,9 @@ def main():
     print(predictions["Target"].value_counts() / predictions.shape[0])
 
     print("  8. Ploting Chart...")
+    print("############## COMMAND TO KILL PROCESS: ###############\n"
+          "ps | grep gold_analysis | awk '{print $1}' | xargs kill\n"
+          "#######################################################\n")
     plot_finplot(df, predictions)
 
 
