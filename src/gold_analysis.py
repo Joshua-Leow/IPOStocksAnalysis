@@ -6,20 +6,19 @@ import finplot as fplt
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import precision_score
 
+symbol = 'GC=F'
+interval = '1h'
 
-info_path = Path(os.path.join(os.getcwd(), f"resources/sp50e0.csv"))
-if os.path.exists(info_path):
-    sp500 = pd.read_csv(info_path, index_col=0)
-else:
-    sp500 = yf.download('GC=F', period="730d", interval='1h', ignore_tz=True, progress=False)
-    # sp500.to_csv("sp500.csv")
 
-sp500.index = pd.to_datetime(sp500.index, utc=True).map(lambda x: x.tz_convert('Singapore'))
-sp500.columns = sp500.columns.droplevel(1)
+df = yf.download(symbol, period="730d", interval=interval, ignore_tz=True, progress=False)
 
-sp500["Tomorrow"] = sp500["Close"].shift(-3)
-sp500["Target"] = (sp500["Tomorrow"] > sp500["Close"]).astype(int)
-sp500 = sp500.loc["1990-01-01":].copy()
+
+df.index = pd.to_datetime(df.index, utc=True).map(lambda x: x.tz_convert('Singapore'))
+df.columns = df.columns.droplevel(1)
+
+df["Tomorrow"] = df["Close"].shift(-3)
+df["Target"] = (df["Tomorrow"] > df["Close"]).astype(int)
+df = df.loc["1990-01-01":].copy()
 
 def predict(train, test, predictors, model):
     model.fit(train[predictors], train["Target"])
@@ -47,24 +46,24 @@ horizons = [2, 5, 60, 250, 1000]
 new_predictors = []
 
 for horizon in horizons:
-    rolling_averages = sp500.rolling(horizon).mean()
+    rolling_averages = df.rolling(horizon).mean()
 
     ratio_column = f"Close_Ratio_{horizon}"
-    sp500[ratio_column] = sp500["Close"] / rolling_averages["Close"]
+    df[ratio_column] = df["Close"] / rolling_averages["Close"]
 
     trend_column = f"Trend_{horizon}"
-    sp500[trend_column] = sp500.shift(1).rolling(horizon).sum()["Target"]
+    df[trend_column] = df.shift(1).rolling(horizon).sum()["Target"]
 
     new_predictors += [ratio_column, trend_column]
-# sp500 = sp500.dropna(subset=sp500.columns[sp500.columns != "Tomorrow"])
+# df = df.dropna(subset=df.columns[df.columns != "Tomorrow"])
 
 
-sp500 = sp500.dropna()
+df = df.dropna()
 
 print("Preparing model...")
 model = RandomForestClassifier(n_estimators=200, min_samples_split=50, random_state=1)
 print("Backtesting model...")
-predictions = backtest(sp500, model, new_predictors)
+predictions = backtest(df, model, new_predictors)
 print(predictions["Predictions"].value_counts())
 filtered_predictions = predictions.dropna(subset=["Predictions"])
 precision = precision_score(filtered_predictions["Target"], filtered_predictions["Predictions"])
@@ -72,7 +71,7 @@ print("Precision Score:", precision)
 print(predictions["Target"].value_counts() / predictions.shape[0])
 
 
-original_df = sp500.copy()
+original_df = df.copy()
 # Add predictions back to original dataframe
 original_df = pd.merge(original_df, predictions, on='Datetime', how='inner')
 # print(original_df)
